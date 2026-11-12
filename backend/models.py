@@ -75,4 +75,25 @@ class PatientProfile(Base):
 
     def __repr__(self):
         return f"<PatientProfile id={self.id} user_id={self.user_id}>"
+class MedicalDocument(Base):
+    __tablename__ = "medical_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    filename = Column(String(255), nullable=False)
+    original_file_path = Column(String(500), nullable=False)
+    redacted_file_path = Column(String(500), nullable=True)
+    file_size_bytes = Column(Integer, nullable=False)
+    status = Column(String(50), default="Uploaded", nullable=False)
+    uploaded_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<MedicalDocument id={self.id} filename={self.filename} patient_id={self.patient_id}>"
+
+
 

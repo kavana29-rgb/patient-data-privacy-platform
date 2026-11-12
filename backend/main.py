@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, patient
+from routers import auth, patient, documents
+from database import engine
+import models
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Patient Data Privacy Platform",
@@ -19,6 +23,7 @@ app.add_middleware(
 # Register Module A routers
 app.include_router(auth.router)
 app.include_router(patient.router)
+app.include_router(documents.router)
 
 
 @app.get("/")

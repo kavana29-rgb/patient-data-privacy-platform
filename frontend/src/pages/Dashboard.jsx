@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import DocumentManager from '../components/DocumentManager';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -122,6 +123,13 @@ export default function Dashboard() {
         </div>
       )}
 
+       {/* Active Module B: Medical Document Management (Daiwik) */}
+      {isPatient && (
+        <div id="document-vault-section">
+          <DocumentManager />
+        </div>
+      )}
+
       {/* Navigation Placeholders for Teammates' Modules */}
       <div className="modules-section">
         <div className="section-title-wrap">
@@ -132,28 +140,32 @@ export default function Dashboard() {
         </div>
 
         <div className="module-grid">
-          {/* Module B: Medical Documents (Placeholder) */}
-          <div className="module-card card placeholder-card">
+                    {/* Module B: Medical Documents (Active - Daiwik) */}
+          <div className="module-card card">
             <div className="module-card-header">
               <div className="module-icon">📁</div>
-              <span className="module-badge badge-placeholder">Module B — Teammate</span>
+              <span className="module-badge badge-blue">Module B — Active</span>
             </div>
             <h3>Medical Documents</h3>
             <p className="module-desc">
-              Secure health records storage, automated PII redaction, and encrypted clinical document repository.
+              Upload synthetic PDF medical reports, view upload history, and preview or download original and redacted versions.
             </p>
             <div className="placeholder-footer">
-              <span className="placeholder-tag">🚧 Under Development by Teammate</span>
+              <span className="placeholder-tag">✅ Ready for Patients</span>
               <button
                 type="button"
-                className="btn btn-disabled btn-sm"
-                disabled
-                title="This module is assigned to another teammate"
+                className="btn btn-primary btn-sm"
+                onClick={() =>
+                  document
+                    .getElementById('document-vault-section')
+                    ?.scrollIntoView({ behavior: 'smooth' })
+                }
               >
                 Access Documents
               </button>
             </div>
           </div>
+
 
           {/* Module C: Consent Management (Placeholder) */}
           <div className="module-card card placeholder-card">

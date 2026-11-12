@@ -220,6 +220,9 @@ __marimo__/
 .streamlit/secrets.toml
 
 .env
+backend/.env
+venv/
 .venv/
-__pycache__/
-*.pyc
+backend/venv/
+backend/secure_storage/
+
