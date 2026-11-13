@@ -1,0 +1,67 @@
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/useAuth';
+
+export default function Navbar() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  const isPatient = user.role === 'patient';
+
+  return (
+    <header className="navbar">
+      <div className="navbar-container">
+        <Link to="/dashboard" className="navbar-brand">
+          <span className="brand-icon">🛡️</span>
+          <span className="brand-text">
+            <strong>AegisHealth</strong>
+            <span className="brand-sub">Privacy Platform</span>
+          </span>
+        </Link>
+
+        <nav className="navbar-links">
+          <Link
+            to="/dashboard"
+            className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
+          >
+            Dashboard
+          </Link>
+          {isPatient && (
+            <Link
+              to="/profile"
+              className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}
+            >
+              My Medical Profile
+            </Link>
+          )}
+        </nav>
+
+        <div className="navbar-user">
+          <div className="user-info">
+            <span className="user-name">{user.full_name}</span>
+            <span className={`role-badge role-${user.role}`}>
+              {user.role === 'provider' ? '👨‍⚕️ Healthcare Provider' : '👤 Patient'}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm logout-btn"
+            onClick={handleLogout}
+            title="Log out securely"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
