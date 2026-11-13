@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+.env
+backend/.env
+venv/
+.venv/
+backend/venv/
+backend/secure_storage/
+
