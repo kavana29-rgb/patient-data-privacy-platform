@@ -105,8 +105,64 @@ export const patientApi = {
     }),
 };
 
+// ---------------------------------------------------------------------------
+// Medical Document Endpoints (Module B - Daiwik)
+// ---------------------------------------------------------------------------
+export const documentApi = {
+  /**
+   * List all medical documents belonging to the authenticated patient
+   */
+  listDocuments: () =>
+    request('/documents/', {
+      method: 'GET',
+    }),
+
+  /**
+   * Upload a new PDF medical document using FormData
+   */
+  uploadDocument: async (file) => {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error((data && (data.detail || data.message)) || 'Document upload failed.');
+    }
+    return data;
+  },
+
+  /**
+   * Fetch PDF binary blob for in-app preview or download ('original' or 'redacted')
+   */
+  fetchDocumentBlob: async (docId, version = 'original') => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/documents/${docId}/file?version=${version}`, {
+      method: 'GET',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new Error((data && (data.detail || data.message)) || `Unable to load ${version} PDF.`);
+    }
+    return await response.blob();
+  },
+};
+
 export default {
   auth: authApi,
   patient: patientApi,
+  documents: documentApi,
 };
 

@@ -110,4 +110,16 @@ class TokenData(BaseModel):
     email: Optional[str] = None
     user_id: Optional[int] = None
     role: Optional[str] = None
+class DocumentResponse(BaseModel):
+    id: int
+    patient_id: int
+    filename: str
+    file_size_bytes: int
+    status: str
+    has_redacted: bool
+    uploaded_at: datetime
+
+    class Config:
+        from_attributes = True
+
 
