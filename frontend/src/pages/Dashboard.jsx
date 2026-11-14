@@ -1,11 +1,19 @@
+
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import DocumentManager from '../components/DocumentManager';
+import ProviderDashboard from './ProviderDashboard';
+import PatientConsentRequests from './PatientConsentRequests';
+import PatientAccessHistory from './PatientAccessHistory';
 
 export default function Dashboard() {
   const { user } = useAuth();
 
   if (!user) return null;
+
+  if (user.role === 'provider') {
+    return <ProviderDashboard />;
+  }
 
   const isPatient = user.role === 'patient';
   const profile = user.patient_profile;
@@ -38,7 +46,7 @@ export default function Dashboard() {
           <div className="stat-icon-wrapper blue">🔐</div>
           <div className="stat-info">
             <span className="stat-label">Access Control</span>
-            <span className="stat-value">{isPatient ? 'Patient Self-Governed' : 'Authorized Clinician'}</span>
+            <span className="stat-value">Patient Self-Governed</span>
             <span className="stat-hint">Role verified by backend token validation</span>
           </div>
         </div>
@@ -62,7 +70,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Patient Profile Summary Card (Active Module A feature) */}
+      {/* Patient Profile Summary */}
       {isPatient && (
         <div className="profile-summary-section card">
           <div className="section-header-flex">
@@ -123,12 +131,18 @@ export default function Dashboard() {
         </div>
       )}
 
-       {/* Active Module B: Medical Document Management (Daiwik) */}
+      {/* Module B: Medical Document Management */}
       {isPatient && (
         <div id="document-vault-section">
           <DocumentManager />
         </div>
       )}
+
+      {/* Module E: Provider Consent Requests */}
+      {isPatient && <PatientConsentRequests />}
+
+      {/* Module E: Patient Document Access History */}
+      {isPatient && <PatientAccessHistory />}
 
       {/* Navigation Placeholders for Teammates' Modules */}
       <div className="modules-section">
@@ -140,7 +154,7 @@ export default function Dashboard() {
         </div>
 
         <div className="module-grid">
-                    {/* Module B: Medical Documents (Active - Daiwik) */}
+          {/* Module B */}
           <div className="module-card card">
             <div className="module-card-header">
               <div className="module-icon">📁</div>
@@ -166,8 +180,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-
-          {/* Module C: Consent Management (Placeholder) */}
+          {/* Module C */}
           <div className="module-card card placeholder-card">
             <div className="module-card-header">
               <div className="module-icon">🛡️</div>
@@ -179,36 +192,8 @@ export default function Dashboard() {
             </p>
             <div className="placeholder-footer">
               <span className="placeholder-tag">🚧 Under Development by Teammate</span>
-              <button
-                type="button"
-                className="btn btn-disabled btn-sm"
-                disabled
-                title="This module is assigned to another teammate"
-              >
+              <button type="button" className="btn btn-disabled btn-sm" disabled>
                 Manage Consents
-              </button>
-            </div>
-          </div>
-
-          {/* Module D: Access History (Placeholder) */}
-          <div className="module-card card placeholder-card">
-            <div className="module-card-header">
-              <div className="module-icon">📜</div>
-              <span className="module-badge badge-placeholder">Module D — Teammate</span>
-            </div>
-            <h3>Access History</h3>
-            <p className="module-desc">
-              Immutable audit logs tracking whenever a clinician, system, or organization views your records.
-            </p>
-            <div className="placeholder-footer">
-              <span className="placeholder-tag">🚧 Under Development by Teammate</span>
-              <button
-                type="button"
-                className="btn btn-disabled btn-sm"
-                disabled
-                title="This module is assigned to another teammate"
-              >
-                View Audit Trail
               </button>
             </div>
           </div>

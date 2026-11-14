@@ -1,3 +1,4 @@
+
 /**
  * Centralized API client for Patient Data Privacy Platform
  * Handles baseUrl, JWT Bearer headers, and unified error handling.
@@ -23,7 +24,6 @@ async function request(endpoint, options = {}) {
   try {
     const response = await fetch(url, config);
 
-    // If unauthorized or expired token, clear storage and trigger event
     if (response.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -36,6 +36,7 @@ async function request(endpoint, options = {}) {
       const errorMessage =
         (data && (data.detail || data.message)) ||
         `Request failed with status ${response.status}`;
+
       const error = new Error(errorMessage);
       error.status = response.status;
       error.data = data;
@@ -44,9 +45,10 @@ async function request(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    // Re-throw with formatted message if network fails
     if (!error.status) {
-      error.message = error.message || 'Unable to connect to the backend server. Please verify the API is running.';
+      error.message =
+        error.message ||
+        'Unable to connect to the backend server. Please verify the API is running.';
     }
     throw error;
   }
@@ -55,28 +57,20 @@ async function request(endpoint, options = {}) {
 // ---------------------------------------------------------------------------
 // Authentication Endpoints
 // ---------------------------------------------------------------------------
+
 export const authApi = {
-  /**
-   * Register a new patient or healthcare provider
-   */
   register: (userData) =>
     request('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     }),
 
-  /**
-   * Login with email and password
-   */
   login: (credentials) =>
     request('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
 
-  /**
-   * Retrieve current authenticated user and profile
-   */
   getMe: () =>
     request('/auth/me', {
       method: 'GET',
@@ -86,18 +80,13 @@ export const authApi = {
 // ---------------------------------------------------------------------------
 // Patient Profile Endpoints
 // ---------------------------------------------------------------------------
+
 export const patientApi = {
-  /**
-   * Retrieve authenticated patient's profile
-   */
   getProfile: () =>
     request('/patient/profile', {
       method: 'GET',
     }),
 
-  /**
-   * Update authenticated patient's profile
-   */
   updateProfile: (profileData) =>
     request('/patient/profile', {
       method: 'PUT',
@@ -106,20 +95,15 @@ export const patientApi = {
 };
 
 // ---------------------------------------------------------------------------
-// Medical Document Endpoints (Module B - Daiwik)
+// Medical Document Endpoints (Module B)
 // ---------------------------------------------------------------------------
+
 export const documentApi = {
-  /**
-   * List all medical documents belonging to the authenticated patient
-   */
   listDocuments: () =>
     request('/documents/', {
       method: 'GET',
     }),
 
-  /**
-   * Upload a new PDF medical document using FormData
-   */
   uploadDocument: async (file) => {
     const token = localStorage.getItem('token');
     const formData = new FormData();
@@ -134,35 +118,114 @@ export const documentApi = {
     });
 
     const data = await response.json().catch(() => null);
+
     if (!response.ok) {
-      throw new Error((data && (data.detail || data.message)) || 'Document upload failed.');
+      throw new Error(
+        (data && (data.detail || data.message)) ||
+        'Document upload failed.'
+      );
     }
+
     return data;
   },
 
-  /**
-   * Fetch PDF binary blob for in-app preview or download ('original' or 'redacted')
-   */
   fetchDocumentBlob: async (docId, version = 'original') => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/documents/${docId}/file?version=${version}`, {
-      method: 'GET',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/documents/${docId}/file?version=${version}`,
+      {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      }
+    );
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      throw new Error((data && (data.detail || data.message)) || `Unable to load ${version} PDF.`);
+      throw new Error(
+        (data && (data.detail || data.message)) ||
+        `Unable to load ${version} PDF.`
+      );
     }
+
     return await response.blob();
   },
 };
+
+// ---------------------------------------------------------------------------
+// Secure Document Sharing Endpoints (Module E)
+// ---------------------------------------------------------------------------
+
+export const sharingApi = {
+
+  // Provider: create a patient document access request
+  createRequest: (requestData) =>
+    request('/sharing/requests', {
+      method: 'POST',
+      body: JSON.stringify(requestData),
+    }),
+
+  // Provider: view requests created by the logged-in provider
+  getProviderRequests: () =>
+    request('/sharing/provider/requests', {
+      method: 'GET',
+    }),
+
+  // Patient: view access requests received from providers
+  getPatientRequests: () =>
+    request('/sharing/patient/requests', {
+      method: 'GET',
+    }),
+
+  // Patient: view document access audit history
+  getPatientAuditHistory: () =>
+    request('/sharing/patient/audit-history', {
+      method: 'GET',
+    }),
+
+  // Patient: approve or reject a provider's request
+  decideRequest: (requestId, decisionData) =>
+    request(`/sharing/patient/requests/${requestId}/decision`, {
+      method: 'PATCH',
+      body: JSON.stringify(decisionData),
+    }),
+
+  // Provider: download a document after consent approval
+  fetchSharedDocument: async (requestId) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(
+      `${API_BASE_URL}/sharing/requests/${requestId}/document`,
+      {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+
+      throw new Error(
+        (data && (data.detail || data.message)) ||
+        'Unable to access the shared document.'
+      );
+    }
+
+    return await response.blob();
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Default API Export
+// ---------------------------------------------------------------------------
 
 export default {
   auth: authApi,
   patient: patientApi,
   documents: documentApi,
+  sharing: sharingApi,
 };
-
