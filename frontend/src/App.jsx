@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import RedactionPage from './redaction/RedactionPage';
 import './App.css';
 
 // Redirect authenticated users away from login/register
@@ -99,6 +100,14 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+  path="/redaction"
+  element={
+    <ProtectedRoute allowedRoles={['patient']}>
+      <RedactionPage />
+    </ProtectedRoute>
+  }
+/>
 
               {/* Default & Catch-all */}
               <Route path="/" element={<RootRedirect />} />
