@@ -1,0 +1,177 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/useAuth';
+import { auditApi } from '../services/api';
+
+export default function AuditPage() {
+  const { user } = useAuth();
+  const [records, setRecords] = useState([]);
+  const [consentStatus, setConsentStatus] = useState({ summary: { active: 0, expiring_soon: 0, expired: 0, total: 0 }, consents: [] });
+  const [search, setSearch] = useState('');
+  const [institution, setInstitution] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [auditData, consentData] = await Promise.all([
+        auditApi.listAudit({
+          search: search || undefined,
+          institution: institution !== 'all' ? institution : undefined,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+        }),
+        auditApi.getConsentStatus(),
+      ]);
+      setRecords(auditData);
+      setConsentStatus(consentData);
+    } catch (error) {
+      setNotice(error.message || 'Unable to load audit data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (user) {
+        loadData();
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, institution, statusFilter]);
+
+  const institutions = useMemo(
+    () => [...new Set(records.map((item) => item.institution_name))],
+    [records]
+  );
+
+  const handleCleanup = async () => {
+    try {
+      const result = await auditApi.anonymizeExpiredRecords();
+      setNotice(result.message || 'Retention cleanup completed.');
+      await loadData();
+    } catch (error) {
+      setNotice(error.message || 'Failed to anonymize expired records.');
+    }
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="container" style={{ padding: '2rem 1rem 3rem' }}>
+      <div className="page-header">
+        <div>
+          <h1>Access History & Lifecycle Monitoring</h1>
+          <p className="text-muted">
+            Review who accessed your records, why they accessed them, and whether consent is still valid.
+          </p>
+        </div>
+      </div>
+
+      {notice && (
+        <div className="alert alert-success" role="alert" style={{ marginBottom: '1.5rem' }}>
+          <span className="alert-icon">ℹ️</span>
+          <span>{notice}</span>
+        </div>
+      )}
+
+      <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
+        <div className="stat-card card">
+          <div className="stat-icon-wrapper blue">🧾</div>
+          <div className="stat-info">
+            <span className="stat-label">Active Consents</span>
+            <span className="stat-value">{consentStatus.summary.active}</span>
+          </div>
+        </div>
+        <div className="stat-card card">
+          <div className="stat-icon-wrapper teal">⏳</div>
+          <div className="stat-info">
+            <span className="stat-label">Expiring Soon</span>
+            <span className="stat-value">{consentStatus.summary.expiring_soon}</span>
+          </div>
+        </div>
+        <div className="stat-card card">
+          <div className="stat-icon-wrapper green">⚠️</div>
+          <div className="stat-info">
+            <span className="stat-label">Expired</span>
+            <span className="stat-value">{consentStatus.summary.expired}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search institution, document, or purpose"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ minWidth: '240px', flex: 1 }}
+          />
+          <select className="form-control" value={institution} onChange={(e) => setInstitution(e.target.value)} style={{ minWidth: '180px' }}>
+            <option value="all">All institutions</option>
+            {institutions.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </select>
+          <select className="form-control" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ minWidth: '160px' }}>
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="anonymized">Anonymized</option>
+          </select>
+          <button type="button" className="btn btn-primary" onClick={handleCleanup}>
+            Run Retention Cleanup
+          </button>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: '1rem 1.25rem' }}>
+        {loading ? (
+          <p>Loading access history...</p>
+        ) : records.length === 0 ? (
+          <p className="text-muted">No audit history is available for this patient yet.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={{ padding: '12px 10px', textAlign: 'left' }}>Institution</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left' }}>Document</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left' }}>Timestamp</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left' }}>Purpose</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left' }}>Action</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left' }}>Consent Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((record) => (
+                  <tr key={record.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '12px 10px' }}>{record.institution_name}</td>
+                    <td style={{ padding: '12px 10px' }}>{record.document_name}</td>
+                    <td style={{ padding: '12px 10px' }}>{new Date(record.access_time).toLocaleString()}</td>
+                    <td style={{ padding: '12px 10px' }}>{record.purpose}</td>
+                    <td style={{ padding: '12px 10px' }}>{record.action}</td>
+                    <td style={{ padding: '12px 10px' }}>
+                      <span className="status-pill" style={{ background: record.consent_status === 'expired' ? '#fee2e2' : record.consent_status === 'active' ? '#dcfce7' : '#e0f2fe', color: '#1f2937' }}>
+                        {record.consent_status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
