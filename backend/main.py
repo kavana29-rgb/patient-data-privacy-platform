@@ -4,6 +4,8 @@ from routers import auth, patient, documents, sharing
 from database import engine
 import models
 
+from app.modules.redaction.router import router as redaction_router
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -24,6 +26,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(patient.router)
 app.include_router(documents.router)
+app.include_router(redaction_router)
 
 
 # Register Module E - Secure Provider Sharing
