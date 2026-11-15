@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, patient, documents
+from routers import auth, patient, documents, sharing
 from database import engine
 import models
 
@@ -25,6 +25,9 @@ app.include_router(auth.router)
 app.include_router(patient.router)
 app.include_router(documents.router)
 
+
+# Register Module E - Secure Provider Sharing
+app.include_router(sharing.router)
 
 @app.get("/")
 def home():

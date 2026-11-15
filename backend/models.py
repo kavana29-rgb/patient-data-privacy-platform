@@ -95,5 +95,88 @@ class MedicalDocument(Base):
     def __repr__(self):
         return f"<MedicalDocument id={self.id} filename={self.filename} patient_id={self.patient_id}>"
 
+class ProviderAccessRequest(Base):
+    __tablename__ = "provider_access_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Provider requesting access
+    provider_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    # Patient whose document is requested
+    patient_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    # Specific medical document
+    document_id = Column(
+        Integer,
+        ForeignKey("medical_documents.id"),
+        nullable=False,
+        index=True
+    )
+
+    # Reason for requesting access
+    purpose = Column(Text, nullable=False)
+
+    # Pending, Approved, Rejected or Revoked
+    status = Column(String(30), default="Pending", nullable=False)
+
+    requested_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    responded_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Permission expiry
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+
+    decision_note = Column(Text, nullable=True)
+
+
+class AccessAuditLog(Base):
+    __tablename__ = "access_audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    provider_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    document_id = Column(
+        Integer,
+        ForeignKey("medical_documents.id"),
+        nullable=True
+    )
+
+    request_id = Column(
+        Integer,
+        ForeignKey("provider_access_requests.id"),
+        nullable=True
+    )
+
+    # Example: REQUEST_CREATED, CONSENT_APPROVED,
+    # DOCUMENT_ACCESS_GRANTED, DOCUMENT_ACCESS_DENIED
+    action = Column(String(100), nullable=False)
+
+    success = Column(Boolean, default=True, nullable=False)
+
+    details = Column(Text, nullable=True)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
 
 
