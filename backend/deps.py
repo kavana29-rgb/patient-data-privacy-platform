@@ -58,10 +58,15 @@ def require_role(allowed_roles: List[models.UserRole]):
     """
     Enforces role-based authorization based on the user's verified database record.
     Never trusts roles claims solely from the client.
+    Robustly handles Enum instances and case-insensitive string values.
     """
     def role_dependency(current_user: models.User = Depends(get_current_user)) -> models.User:
-        if current_user.role not in allowed_roles:
-            role_names = [r.value for r in allowed_roles]
+        user_role = current_user.role
+        user_role_str = (user_role.value if hasattr(user_role, "value") else str(user_role)).lower()
+        allowed_strs = [(r.value if hasattr(r, "value") else str(r)).lower() for r in allowed_roles]
+
+        if user_role_str not in allowed_strs:
+            role_names = [r.value if hasattr(r, "value") else str(r) for r in allowed_roles]
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Access forbidden: requires one of the following roles: {', '.join(role_names)}"

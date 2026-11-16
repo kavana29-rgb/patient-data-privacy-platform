@@ -45,7 +45,8 @@ export const detectPII = async (documentId) => {
     );
   } catch (error) {
     throw new Error(
-      error.message || "Unable to connect to the backend."
+      error.message || "Unable to connect to the backend.",
+      { cause: error }
     );
   }
 };
@@ -75,7 +76,8 @@ export const redactPDF = async (documentId, selectedValues) => {
     );
   } catch (error) {
     throw new Error(
-      error.message || "Unable to connect to the backend."
+      error.message || "Unable to connect to the backend.",
+      { cause: error }
     );
   }
 };

@@ -8,16 +8,18 @@ def redact_pdf(input_path, output_path, selected_values):
     if not selected_values:
         raise ValueError("Select at least one field to redact.")
 
+    # Clean and deduplicate search targets while preserving order
+    clean_values = list(dict.fromkeys(v.strip() for v in selected_values if v and v.strip()))
+    if not clean_values:
+        raise ValueError("Select at least one valid field to redact.")
+
     document = fitz.open(input_path)
 
     try:
         found_count = 0
 
         for page in document:
-            for value in selected_values:
-                if not value:
-                    continue
-
+            for value in clean_values:
                 matches = page.search_for(value)
 
                 for rect in matches:

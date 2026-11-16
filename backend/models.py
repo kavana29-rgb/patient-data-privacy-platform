@@ -179,4 +179,24 @@ class AccessAuditLog(Base):
     )
 
 
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    institution_name = Column(String(255), nullable=False, default="Unknown Institution")
+    document_name = Column(String(255), nullable=False)
+    purpose = Column(String(255), nullable=False)
+    action = Column(String(50), nullable=False, default="view")
+    consent_status = Column(String(50), nullable=False, default="active")
+    access_time = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<AuditLog id={self.id} patient_id={self.patient_id} institution={self.institution_name}>"
+
+
+
 

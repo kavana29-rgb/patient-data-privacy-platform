@@ -153,3 +153,76 @@ def get_document_file(
         media_type="application/pdf",
         filename=f"{version}_{doc.filename}",
     )
+
+
+@router.delete("/{doc_id}", status_code=status.HTTP_200_OK)
+def delete_medical_document(
+    doc_id: int,
+    db: Session = Depends(get_db),
+    current_patient: models.User = Depends(get_current_patient),
+):
+    """
+    Deletes an uploaded medical document with patient ownership verification,
+    foreign-key constraint handling, and physical storage removal.
+    """
+    doc = (
+        db.query(models.MedicalDocument)
+        .filter(models.MedicalDocument.id == doc_id)
+        .first()
+    )
+
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medical document not found."
+        )
+
+    if doc.patient_id != current_patient.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: You do not own this document."
+        )
+
+    # 1. Nullify document references in access audit logs to preserve audit trail
+    try:
+        db.query(models.AccessAuditLog).filter(
+            models.AccessAuditLog.document_id == doc_id
+        ).update({models.AccessAuditLog.document_id: None})
+    except Exception:
+        db.rollback()
+
+    # 2. Delete associated provider access requests
+    try:
+        db.query(models.ProviderAccessRequest).filter(
+            models.ProviderAccessRequest.document_id == doc_id
+        ).delete()
+    except Exception:
+        db.rollback()
+
+    # 3. Delete associated consent records if present
+    try:
+        if hasattr(models, "ConsentRecord"):
+            db.query(models.ConsentRecord).filter(
+                models.ConsentRecord.document_id == doc_id
+            ).delete()
+    except Exception:
+        db.rollback()
+
+    # 4. Safely remove physical files from storage
+    file_paths = [doc.original_file_path, doc.redacted_file_path]
+    for path in file_paths:
+        if path and os.path.exists(path):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+    filename = doc.filename
+    db.delete(doc)
+    db.commit()
+
+    return {
+        "message": f"Document '{filename}' deleted successfully.",
+        "id": doc_id,
+        "filename": filename
+    }

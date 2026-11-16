@@ -120,8 +120,9 @@ def redact_fields(
         )
 
     text = extract_pdf_text(document.original_file_path)
+    detected_unique = detect_pii(text, deduplicate=True)
     detected_values = {
-        item["value"] for item in detect_pii(text)
+        item["value"] for item in detected_unique
     }
 
     if not set(selected).issubset(detected_values):
@@ -139,10 +140,23 @@ def redact_fields(
     )
 
     try:
+        # Collect all occurrence strings and display strings for selected items
+        # to ensure every occurrence across all pages of the PDF is permanently redacted.
+        search_values = []
+        for item in detected_unique:
+            if item["value"] in selected:
+                search_values.append(item["value"])
+                for occ in item.get("occurrences", []):
+                    raw_val = occ.get("raw_value")
+                    if raw_val and raw_val.strip():
+                        search_values.append(raw_val.strip())
+
+        unique_search_values = list(dict.fromkeys(search_values))
+
         redact_pdf(
             document.original_file_path,
             output_path,
-            selected
+            unique_search_values
         )
 
         document.redacted_file_path = output_path
