@@ -18,7 +18,13 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  const userRoleStr = (user.role || '').toLowerCase();
+  const hasRequiredRole =
+    !allowedRoles ||
+    allowedRoles.length === 0 ||
+    allowedRoles.some((r) => (r?.value || r || '').toLowerCase() === userRoleStr);
+
+  if (!hasRequiredRole) {
     return (
       <div className="unauthorized-container card">
         <div className="icon-shield-warning">🚫</div>

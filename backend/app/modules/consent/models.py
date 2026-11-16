@@ -9,7 +9,7 @@ class ConsentRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     institution_id = Column(String, nullable=False, index=True)
-    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
+    document_id = Column(Integer, ForeignKey("medical_documents.id"), nullable=False)
     purpose = Column(String, nullable=False)
     expiry_date = Column(DateTime, nullable=False)
     status = Column(String, default="active")  # active, expired, revoked

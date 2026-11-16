@@ -1,7 +1,7 @@
 
 /**
- * Centralized API client for Patient Data Privacy Platform
- * Handles baseUrl, JWT Bearer headers, and unified error handling.
+ * Centralized API client for MyMedData Platform
+ * Handles baseUrl, JWT Bearer headers, unified request execution and error handling.
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -54,6 +54,50 @@ async function request(endpoint, options = {}) {
   }
 }
 
+// Generic Axios-compatible API Client helper
+export const apiClient = {
+  get: async (endpoint, options = {}) => {
+    const data = await request(endpoint, { method: 'GET', ...options });
+    return { data };
+  },
+  post: async (endpoint, body = {}, options = {}) => {
+    const isFormData = body instanceof FormData;
+    const config = {
+      method: 'POST',
+      body: isFormData ? body : JSON.stringify(body),
+      headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+      ...options,
+    };
+    const data = await request(endpoint, config);
+    return { data };
+  },
+  put: async (endpoint, body = {}, options = {}) => {
+    const isFormData = body instanceof FormData;
+    const config = {
+      method: 'PUT',
+      body: isFormData ? body : JSON.stringify(body),
+      headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+      ...options,
+    };
+    const data = await request(endpoint, config);
+    return { data };
+  },
+  patch: async (endpoint, body = {}, options = {}) => {
+    const config = {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    };
+    const data = await request(endpoint, config);
+    return { data };
+  },
+  delete: async (endpoint, options = {}) => {
+    const data = await request(endpoint, { method: 'DELETE', ...options });
+    return { data };
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Authentication Endpoints
 // ---------------------------------------------------------------------------
@@ -95,7 +139,7 @@ export const patientApi = {
 };
 
 // ---------------------------------------------------------------------------
-// Medical Document Endpoints (Module B)
+// Medical Document Endpoints
 // ---------------------------------------------------------------------------
 
 export const documentApi = {
@@ -152,10 +196,15 @@ export const documentApi = {
 
     return await response.blob();
   },
+
+  deleteDocument: (docId) =>
+    request(`/documents/${docId}`, {
+      method: 'DELETE',
+    }),
 };
 
 // ---------------------------------------------------------------------------
-// Secure Document Sharing Endpoints (Module E)
+// Secure Document Sharing Endpoints
 // ---------------------------------------------------------------------------
 
 export const sharingApi = {
@@ -224,6 +273,8 @@ export const sharingApi = {
 // ---------------------------------------------------------------------------
 
 export default {
+  ...apiClient,
+  request,
   auth: authApi,
   patient: patientApi,
   documents: documentApi,

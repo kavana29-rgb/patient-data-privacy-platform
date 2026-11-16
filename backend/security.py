@@ -5,7 +5,17 @@ import bcrypt
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 
-load_dotenv()
+# Locate .env in backend directory or root directory
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+backend_env = os.path.join(backend_dir, ".env")
+root_env = os.path.join(os.path.dirname(backend_dir), ".env")
+
+if os.path.exists(backend_env):
+    load_dotenv(backend_env)
+elif os.path.exists(root_env):
+    load_dotenv(root_env)
+else:
+    load_dotenv()
 
 # JWT Configuration
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
