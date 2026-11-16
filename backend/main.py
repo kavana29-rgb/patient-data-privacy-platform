@@ -32,6 +32,9 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Database table verification deferred: {e}")
     yield
 
+from app.modules.redaction.router import router as redaction_router
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="MyMedData Platform API",
@@ -64,6 +67,7 @@ app.include_router(documents.router, prefix="/api")
 
 # Consent Management
 app.include_router(consent_router)
+app.include_router(redaction_router)
 
 # PII Redaction
 app.include_router(redaction_router)
