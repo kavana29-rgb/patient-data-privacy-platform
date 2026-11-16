@@ -1,6 +1,7 @@
 import os
 import shutil
 import uuid
+import tempfile
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import FileResponse
@@ -13,9 +14,14 @@ import schemas
 
 router = APIRouter(prefix="/documents", tags=["Medical Documents"])
 
-# Secure storage directory inside backend/
-BASE_STORAGE_DIR = os.path.join("secure_storage", "originals")
+# Secure storage directory (uses /tmp on Vercel, local folder on your PC)
+BASE_STORAGE_DIR = os.path.join(
+    tempfile.gettempdir() if os.getenv("VERCEL") else ".",
+    "secure_storage",
+    "originals"
+)
 os.makedirs(BASE_STORAGE_DIR, exist_ok=True)
+
 
 MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB limit
 
