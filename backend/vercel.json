@@ -1,9 +1,1 @@
-{
-  "$schema": "https://vercel.sh",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/main.py"
-    }
-  ]
-}
+{}
