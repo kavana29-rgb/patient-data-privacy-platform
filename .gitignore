@@ -226,3 +226,9 @@ venv/
 backend/venv/
 backend/secure_storage/
 
+
+node_modules/
+frontend/node_modules/
+venv/
+.venv/
+backend/venv/
