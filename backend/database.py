@@ -1,31 +1,27 @@
-
 import os
+from urllib.parse import quote_plus
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
-# Locate .env in backend directory or root directory
-backend_dir = os.path.dirname(os.path.abspath(__file__))
-backend_env = os.path.join(backend_dir, ".env")
-root_env = os.path.join(os.path.dirname(backend_dir), ".env")
-
-if os.path.exists(backend_env):
-    load_dotenv(backend_env)
-elif os.path.exists(root_env):
-    load_dotenv(root_env)
-else:
-    load_dotenv()
+load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is missing from .env")
 
-connect_args = {"connect_timeout": 5} if "sqlite" not in DATABASE_URL else {}
+# Safely encode special characters (#, ,) in the password if pasted raw
+if "://" in DATABASE_URL and "@" in DATABASE_URL:
+    prefix, rest = DATABASE_URL.split("://", 1)
+    creds, host_part = rest.rsplit("@", 1)
+    if ":" in creds:
+        user, pwd = creds.split(":", 1)
+        if "#" in pwd or "," in pwd:
+            DATABASE_URL = f"{prefix}://{user}:{quote_plus(pwd)}@{host_part}"
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args=connect_args,
     pool_pre_ping=True
 )
 
